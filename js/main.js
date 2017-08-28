@@ -1,4 +1,4 @@
-let TrainSpeed = 200;
+let TrainSpeed = 100;
 
 class Train {
   constructor(name, route, map, icon) {
@@ -32,11 +32,9 @@ class Train {
   move() {
     let now = LocalDateTime.now();
     if (this.nextStation == null) {
-      console.log("Route done");
+      // do nothing
     } else if (this.atStation && this.nextStation.departAt.isAfter(LocalDateTime.now())) {
-      console.log("At station, departing", this.nextStation.departAt.toString());
     } else if (this.atStation) {
-      console.log("Next station");
       this.nextStation = this.route.shift();
       this.atStation = false;
       this.move();
@@ -79,16 +77,85 @@ let SixTrainNorth = [
   {lat: 40.790192, lng: -73.947682}
 ]
 
-let FiveTrainSouth = [
+let SixTrainSouth = [
+  {lat: 40.790192, lng: -73.947682},
+  {lat: 40.785683, lng: -73.950927},
+  {lat: 40.779462, lng: -73.955830},
+  {lat: 40.773522, lng: -73.959746},
+  {lat: 40.768144, lng: -73.963872},
+  {lat: 40.762996, lng: -73.967868},
+  {lat: 40.762845, lng: -73.967535},
+  {lat: 40.757156, lng: -73.972160},
+  {lat: 40.752402, lng: -73.977470},
+  {lat: 40.746664, lng: -73.981891}
+]
+
+let FFTrainSouth = [
   {lat: 40.804406, lng: -73.937221},
   {lat: 40.779469, lng: -73.955841},
   {lat: 40.762996, lng: -73.967868},
-  {lat: 40.752399, lng: -73.977470},
+  {lat: 40.752402, lng: -73.977470},
   {lat: 40.735291, lng: -73.991064}
+]
+
+let FFTrainNorth = [
+  {lat: 40.735291, lng: -73.991064},
+  {lat: 40.752402, lng: -73.977470},
+  {lat: 40.762996, lng: -73.967868},
+  {lat: 40.779469, lng: -73.955841},
+  {lat: 40.804406, lng: -73.937221}
 ]
 
 let LocalDateTime = JSJoda.LocalDateTime;
 let ChronoUnit = JSJoda.ChronoUnit;
+
+let sixtrain = (map) => {
+  let icon = L.icon({
+    iconUrl: 'img/6.png',
+    iconSize: [35, 35],
+  });
+  let route = SixTrainNorth;
+  if (Math.random() > 0.5) {
+    route = SixTrainSouth;
+  }
+  let stops = [];
+  for(let i=0; i<route.length; i++) {
+    stops.push({
+      lat: route[i].lat,
+      lng: route[i].lng,
+      departAt: LocalDateTime.now().plusSeconds(i*35)
+    })
+  }
+  new Train("6S", stops, map, icon);
+  setTimeout(() => fftrain(map), 120000);
+}
+
+let fftrain = (map) => {
+  let icon = L.icon({
+    iconUrl: 'img/4.png',
+    iconSize: [35, 35],
+  });
+  if (Math.random() > 0.5) {
+    icon = L.icon({
+      iconUrl: 'img/5.png',
+      iconSize: [35, 35],
+    });
+  }
+  let route = FFTrainSouth;
+  if (Math.random() > 0.5) {
+    route = FFTrainNorth;
+  }
+  let stops = [];
+  for(let i=0; i<route.length; i++) {
+    stops.push({
+      lat: route[i].lat,
+      lng: route[i].lng,
+      departAt: LocalDateTime.now().plusSeconds(i*35)
+    })
+  }
+  new Train("5S", stops, map, icon);
+  setTimeout(() => fftrain(map), 60000);
+}
 
 document.addEventListener('DOMContentLoaded', () => { 
     let mymap = L.map('mapid', {
@@ -105,32 +172,6 @@ document.addEventListener('DOMContentLoaded', () => {
         maxZoom: 22
     }).addTo(mymap);
 
-    let snroutes = [];
-    for(let i=0; i<SixTrainNorth.length; i++) {
-      snroutes.push({
-        lat: SixTrainNorth[i].lat,
-        lng: SixTrainNorth[i].lng,
-        departAt: LocalDateTime.now().plusSeconds(i*20)
-      })
-    }
-    var sixicon = L.icon({
-      iconUrl: 'img/6.png',
-      iconSize: [35, 35],
-    });
-    new Train("6N", snroutes, mymap, sixicon);
-
-    let fsroutes = [];
-    for(let i=0; i<FiveTrainSouth.length; i++) {
-      fsroutes.push({
-        lat: FiveTrainSouth[i].lat,
-        lng: FiveTrainSouth[i].lng,
-        departAt: LocalDateTime.now().plusSeconds(i*35)
-      })
-    }
-    var fiveicon = L.icon({
-      iconUrl: 'img/5.png',
-      iconSize: [35, 35],
-    });
-    new Train("5S", fsroutes, mymap, fiveicon);
-
+    sixtrain(mymap);
+    fftrain(mymap);
 }, false);

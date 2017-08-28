@@ -74,7 +74,7 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var TrainSpeed = 200;
+var TrainSpeed = 100;
 
 var Train = function () {
   function Train(name, route, map, icon) {
@@ -117,11 +117,8 @@ var Train = function () {
     value: function move() {
       var now = LocalDateTime.now();
       if (this.nextStation == null) {
-        console.log("Route done");
-      } else if (this.atStation && this.nextStation.departAt.isAfter(LocalDateTime.now())) {
-        console.log("At station, departing", this.nextStation.departAt.toString());
-      } else if (this.atStation) {
-        console.log("Next station");
+        // do nothing
+      } else if (this.atStation && this.nextStation.departAt.isAfter(LocalDateTime.now())) {} else if (this.atStation) {
         this.nextStation = this.route.shift();
         this.atStation = false;
         this.move();
@@ -157,10 +154,66 @@ var Train = function () {
 
 var SixTrainNorth = [{ lat: 40.746664, lng: -73.981891 }, { lat: 40.752402, lng: -73.977470 }, { lat: 40.757156, lng: -73.972160 }, { lat: 40.762845, lng: -73.967535 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.768144, lng: -73.963872 }, { lat: 40.773522, lng: -73.959746 }, { lat: 40.779462, lng: -73.955830 }, { lat: 40.785683, lng: -73.950927 }, { lat: 40.790192, lng: -73.947682 }];
 
-var FiveTrainSouth = [{ lat: 40.804406, lng: -73.937221 }, { lat: 40.779469, lng: -73.955841 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.752399, lng: -73.977470 }, { lat: 40.735291, lng: -73.991064 }];
+var SixTrainSouth = [{ lat: 40.790192, lng: -73.947682 }, { lat: 40.785683, lng: -73.950927 }, { lat: 40.779462, lng: -73.955830 }, { lat: 40.773522, lng: -73.959746 }, { lat: 40.768144, lng: -73.963872 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.762845, lng: -73.967535 }, { lat: 40.757156, lng: -73.972160 }, { lat: 40.752402, lng: -73.977470 }, { lat: 40.746664, lng: -73.981891 }];
+
+var FFTrainSouth = [{ lat: 40.804406, lng: -73.937221 }, { lat: 40.779469, lng: -73.955841 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.752402, lng: -73.977470 }, { lat: 40.735291, lng: -73.991064 }];
+
+var FFTrainNorth = [{ lat: 40.735291, lng: -73.991064 }, { lat: 40.752402, lng: -73.977470 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.779469, lng: -73.955841 }, { lat: 40.804406, lng: -73.937221 }];
 
 var LocalDateTime = JSJoda.LocalDateTime;
 var ChronoUnit = JSJoda.ChronoUnit;
+
+var sixtrain = function sixtrain(map) {
+  var icon = L.icon({
+    iconUrl: 'img/6.png',
+    iconSize: [35, 35]
+  });
+  var route = SixTrainNorth;
+  if (Math.random() > 0.5) {
+    route = SixTrainSouth;
+  }
+  var stops = [];
+  for (var i = 0; i < route.length; i++) {
+    stops.push({
+      lat: route[i].lat,
+      lng: route[i].lng,
+      departAt: LocalDateTime.now().plusSeconds(i * 35)
+    });
+  }
+  new Train("6S", stops, map, icon);
+  setTimeout(function () {
+    return fftrain(map);
+  }, 120000);
+};
+
+var fftrain = function fftrain(map) {
+  var icon = L.icon({
+    iconUrl: 'img/4.png',
+    iconSize: [35, 35]
+  });
+  if (Math.random() > 0.5) {
+    icon = L.icon({
+      iconUrl: 'img/5.png',
+      iconSize: [35, 35]
+    });
+  }
+  var route = FFTrainSouth;
+  if (Math.random() > 0.5) {
+    route = FFTrainNorth;
+  }
+  var stops = [];
+  for (var i = 0; i < route.length; i++) {
+    stops.push({
+      lat: route[i].lat,
+      lng: route[i].lng,
+      departAt: LocalDateTime.now().plusSeconds(i * 35)
+    });
+  }
+  new Train("5S", stops, map, icon);
+  setTimeout(function () {
+    return fftrain(map);
+  }, 60000);
+};
 
 document.addEventListener('DOMContentLoaded', function () {
   var mymap = L.map('mapid', {
@@ -177,33 +230,8 @@ document.addEventListener('DOMContentLoaded', function () {
     maxZoom: 22
   }).addTo(mymap);
 
-  var snroutes = [];
-  for (var i = 0; i < SixTrainNorth.length; i++) {
-    snroutes.push({
-      lat: SixTrainNorth[i].lat,
-      lng: SixTrainNorth[i].lng,
-      departAt: LocalDateTime.now().plusSeconds(i * 20)
-    });
-  }
-  var sixicon = L.icon({
-    iconUrl: 'img/6.png',
-    iconSize: [35, 35]
-  });
-  new Train("6N", snroutes, mymap, sixicon);
-
-  var fsroutes = [];
-  for (var _i = 0; _i < FiveTrainSouth.length; _i++) {
-    fsroutes.push({
-      lat: FiveTrainSouth[_i].lat,
-      lng: FiveTrainSouth[_i].lng,
-      departAt: LocalDateTime.now().plusSeconds(_i * 35)
-    });
-  }
-  var fiveicon = L.icon({
-    iconUrl: 'img/5.png',
-    iconSize: [35, 35]
-  });
-  new Train("5S", fsroutes, mymap, fiveicon);
+  sixtrain(mymap);
+  fftrain(mymap);
 }, false);
 
 /***/ })
