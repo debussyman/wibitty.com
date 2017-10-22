@@ -127,5 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
     maxZoom: 22
   }).addTo(mymap);
 
+  getTrains(mymap);
   setInterval(() => getTrains(mymap), 30000);
 }, false);

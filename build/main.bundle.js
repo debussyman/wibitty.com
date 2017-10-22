@@ -74,21 +74,28 @@ var _createClass = function () { function defineProperties(target, props) { for 
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-var TrainSpeed = 100;
+var TrainSpeed = 2000;
 
 var Train = function () {
-  function Train(name, route, map, icon) {
+  function Train(data, map) {
     var _this = this;
 
     _classCallCheck(this, Train);
 
-    var firstStop = route.shift();
-    this.id = name + "." + firstStop.departAt.toString();
-    console.log("Creating new train", this.id);
-    this.position = firstStop;
-    this.nextStation = firstStop;
-    this.route = route;
-    this.atStation = true;
+    this.updateData(data);
+
+    // initially put the train at the known coords of stop
+    this.status = "STOPPED_AT";
+    this.position = {
+      lat: this.stop.lat,
+      lng: this.stop.lng
+    };
+
+    console.log("Creating new train", this);
+    var icon = L.icon({
+      iconUrl: "http://www.mta.info/sites/all/themes/mta/images/subway_bullets/" + data.track + ".png",
+      iconSize: [16, 16]
+    });
     this.marker = L.marker([this.position.lat, this.position.lng], { icon: icon }).addTo(map);
     this.intervalId = setInterval(function () {
       return _this.updateMarker();
@@ -96,15 +103,24 @@ var Train = function () {
   }
 
   _createClass(Train, [{
+    key: "updateData",
+    value: function updateData(update) {
+      this.stop = update.stop;
+      this.nextStop = update.next_stop;
+      this.status = update.status;
+      this.id = update.id;
+    }
+  }, {
+    key: "atStation",
+    value: function atStation() {
+      this.status == "STOPPED_AT";
+    }
+  }, {
     key: "updateMarker",
     value: function updateMarker() {
       this.move();
-      if (this.nextStation == null) {
-        this.destroy();
-      } else {
-        var latlng = L.latLng(this.position.lat, this.position.lng);
-        this.marker.setLatLng(latlng);
-      }
+      var latlng = L.latLng(this.position.lat, this.position.lng);
+      this.marker.setLatLng(latlng);
     }
   }, {
     key: "destroy",
@@ -115,104 +131,77 @@ var Train = function () {
   }, {
     key: "move",
     value: function move() {
-      var now = LocalDateTime.now();
-      if (this.nextStation == null) {
-        // do nothing
-      } else if (this.atStation && this.nextStation.departAt.isAfter(LocalDateTime.now())) {} else if (this.atStation) {
-        this.nextStation = this.route.shift();
-        this.atStation = false;
+      var now = Math.round(new Date() / 1000);
+      // not at station but moving towards
+      if (!this.atStation() && this.stop.arrival > 0) {
+        this.updatePosition(now, this.stop.arrival);
+      } else if (!this.atStation() && this.stop.departure > 0) {
+        this.updatePosition(now, this.stop.departure - 30);
+        // at station and departing
+      } else if (this.atStation() && this.stop.departure > now && this.next_stop != null) {
+        this.status = "IN_TRANSIT_TO";
+        this.stop = this.next_stop;
+        this.next_stop = null;
         this.move();
       } else {
-        var deltas = this.howFar();
-        // if we are close enough, just move to the station
-        if (deltas[0] == 0 && deltas[1] == 0) {
-          this.atStation = true;
-        } else {
-          this.position = {
-            lat: this.position.lat + deltas[0],
-            lng: this.position.lng + deltas[1]
-          };
-        }
+        console.log("Don't know how to move", this);
+      }
+    }
+  }, {
+    key: "updatePosition",
+    value: function updatePosition(now, when) {
+      var deltas = this.howFar(now, when);
+      // if we are close enough, just move to the station
+      if (deltas[0] == 0 && deltas[1] == 0) {
+        this.status == "STOPPED_AT";
+      } else {
+        this.position = {
+          lat: this.position.lat + deltas[0],
+          lng: this.position.lng + deltas[1]
+        };
       }
     }
   }, {
     key: "howFar",
-    value: function howFar() {
-      var moves = LocalDateTime.now().until(this.nextStation.departAt.minusSeconds(5), ChronoUnit.MILLIS) / TrainSpeed;
+    value: function howFar(now, when) {
+      // times are in seconds
+      var moves = (when - now) / (TrainSpeed / 1000);
       if (moves < 1) {
         moves = 1;
       }
 
-      var deltaLat = (this.nextStation.lat - this.position.lat) / moves;
-      var deltaLong = (this.nextStation.lng - this.position.lng) / moves;
-      return [deltaLat, deltaLong];
+      var deltaLat = (this.stop.lat - this.position.lat) / moves;
+      var deltaLng = (this.stop.lng - this.position.lng) / moves;
+      return [deltaLat, deltaLng];
     }
   }]);
 
   return Train;
 }();
 
-var SixTrainNorth = [{ lat: 40.746664, lng: -73.981891 }, { lat: 40.752402, lng: -73.977470 }, { lat: 40.757156, lng: -73.972160 }, { lat: 40.762845, lng: -73.967535 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.768144, lng: -73.963872 }, { lat: 40.773522, lng: -73.959746 }, { lat: 40.779462, lng: -73.955830 }, { lat: 40.785683, lng: -73.950927 }, { lat: 40.790192, lng: -73.947682 }];
+var trains = {};
 
-var SixTrainSouth = [{ lat: 40.790192, lng: -73.947682 }, { lat: 40.785683, lng: -73.950927 }, { lat: 40.779462, lng: -73.955830 }, { lat: 40.773522, lng: -73.959746 }, { lat: 40.768144, lng: -73.963872 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.762845, lng: -73.967535 }, { lat: 40.757156, lng: -73.972160 }, { lat: 40.752402, lng: -73.977470 }, { lat: 40.746664, lng: -73.981891 }];
+var getTrains = function getTrains(map) {
+  fetch("https://s3.amazonaws.com/wibitty.com/js/gtfs.json").then(function (resp) {
+    return resp.json();
+  }).then(function (update) {
+    Object.keys(update).forEach(function (key) {
+      var train = update[key];
+      if (trains[train.id]) {
+        trains[train.id].updateData(train);
+      } else {
+        trains[train.id] = new Train(train, map);
+      }
+    });
 
-var FFTrainSouth = [{ lat: 40.804406, lng: -73.937221 }, { lat: 40.779469, lng: -73.955841 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.752402, lng: -73.977470 }, { lat: 40.735291, lng: -73.991064 }];
-
-var FFTrainNorth = [{ lat: 40.735291, lng: -73.991064 }, { lat: 40.752402, lng: -73.977470 }, { lat: 40.762996, lng: -73.967868 }, { lat: 40.779469, lng: -73.955841 }, { lat: 40.804406, lng: -73.937221 }];
-
-var LocalDateTime = JSJoda.LocalDateTime;
-var ChronoUnit = JSJoda.ChronoUnit;
-
-var sixtrain = function sixtrain(map) {
-  var icon = L.icon({
-    iconUrl: 'img/6.png',
-    iconSize: [35, 35]
+    // delete train if no longer in update
+    Object.keys(trains).forEach(function (key) {
+      if (!update[key]) {
+        trains[key].destroy();
+        delete trains[key];
+      }
+    });
   });
-  var route = SixTrainNorth;
-  if (Math.random() > 0.5) {
-    route = SixTrainSouth;
-  }
-  var stops = [];
-  for (var i = 0; i < route.length; i++) {
-    stops.push({
-      lat: route[i].lat,
-      lng: route[i].lng,
-      departAt: LocalDateTime.now().plusSeconds(i * 35)
-    });
-  }
-  new Train("6S", stops, map, icon);
-  setTimeout(function () {
-    return fftrain(map);
-  }, 120000);
-};
-
-var fftrain = function fftrain(map) {
-  var icon = L.icon({
-    iconUrl: 'img/4.png',
-    iconSize: [35, 35]
-  });
-  if (Math.random() > 0.5) {
-    icon = L.icon({
-      iconUrl: 'img/5.png',
-      iconSize: [35, 35]
-    });
-  }
-  var route = FFTrainSouth;
-  if (Math.random() > 0.5) {
-    route = FFTrainNorth;
-  }
-  var stops = [];
-  for (var i = 0; i < route.length; i++) {
-    stops.push({
-      lat: route[i].lat,
-      lng: route[i].lng,
-      departAt: LocalDateTime.now().plusSeconds(i * 35)
-    });
-  }
-  new Train("5S", stops, map, icon);
-  setTimeout(function () {
-    return fftrain(map);
-  }, 60000);
 };
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -230,8 +219,10 @@ document.addEventListener('DOMContentLoaded', function () {
     maxZoom: 22
   }).addTo(mymap);
 
-  sixtrain(mymap);
-  fftrain(mymap);
+  getTrains(mymap);
+  setInterval(function () {
+    return getTrains(mymap);
+  }, 30000);
 }, false);
 
 /***/ })
