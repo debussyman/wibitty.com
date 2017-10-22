@@ -1,0 +1,8 @@
+*.DS_Store
+proto/*
+__py_cache__/*
+bin/*
+.python-version
+*.swp
+requirements.txt
+nyct_trains.zip

@@ -1,27 +1,41 @@
-let TrainSpeed = 100;
+let TrainSpeed = 2000;
 
 class Train {
-  constructor(name, route, map, icon) {
-    let firstStop = route.shift();
-    this.id = `${name}.${firstStop.departAt.toString()}`;
-    console.log("Creating new train", this.id);
-    this.position = firstStop;
-    this.nextStation = firstStop;
-    this.route = route;
-    this.atStation = true;
+  constructor(data, map) {
+    this.updateData(data);
+
+    // initially put the train at the known coords of stop
+    this.status = "STOPPED_AT";
+    this.position = {
+      lat: this.stop.lat,
+      lng: this.stop.lng
+    };
+
+    console.log("Creating new train", this);
+    let icon = L.icon({
+      iconUrl: `http://www.mta.info/sites/all/themes/mta/images/subway_bullets/${data.track}.png`,
+      iconSize: [16, 16]
+    });
     this.marker = L.marker([this.position.lat, this.position.lng], {icon: icon})
       .addTo(map);
     this.intervalId = setInterval(() => this.updateMarker(), TrainSpeed);
   }
 
+  updateData(update) {
+    this.stop = update.stop;
+    this.nextStop = update.next_stop;
+    this.status = update.status;
+    this.id = update.id;
+  }
+
+  atStation() {
+    this.status == "STOPPED_AT";
+  }
+
   updateMarker() {
     this.move();
-    if (this.nextStation == null) {
-      this.destroy();
-    } else {
-      let latlng = L.latLng(this.position.lat, this.position.lng);
-      this.marker.setLatLng(latlng);
-    }
+    let latlng = L.latLng(this.position.lat, this.position.lng);
+    this.marker.setLatLng(latlng);
   }
 
   destroy() {
@@ -30,148 +44,88 @@ class Train {
   }
 
   move() {
-    let now = LocalDateTime.now();
-    if (this.nextStation == null) {
-      // do nothing
-    } else if (this.atStation && this.nextStation.departAt.isAfter(LocalDateTime.now())) {
-    } else if (this.atStation) {
-      this.nextStation = this.route.shift();
-      this.atStation = false;
+    let now = Math.round(new Date() / 1000);
+    // not at station but moving towards
+    if (!this.atStation() && this.stop.arrival > 0) {
+      this.updatePosition(now, this.stop.arrival);
+    } else if (!this.atStation() && this.stop.departure > 0) {
+      this.updatePosition(now, this.stop.departure - 30);
+    // at station and departing
+    } else if (this.atStation() && this.stop.departure > now && this.next_stop != null) {
+      this.status = "IN_TRANSIT_TO";
+      this.stop = this.next_stop;
+      this.next_stop = null;
       this.move();
     } else {
-      let deltas = this.howFar();
-      // if we are close enough, just move to the station
-      if (deltas[0] == 0 && deltas[1] == 0) {
-        this.atStation = true;
-      } else {
-        this.position = {
-          lat: this.position.lat + deltas[0],
-          lng: this.position.lng + deltas[1]
-        }
+      console.log("Don't know how to move", this);
+    }
+  }
+
+  updatePosition(now, when) {
+    let deltas = this.howFar(now, when);
+    // if we are close enough, just move to the station
+    if (deltas[0] == 0 && deltas[1] == 0) {
+      this.status == "STOPPED_AT";
+    } else {
+      this.position = {
+        lat: this.position.lat + deltas[0],
+        lng: this.position.lng + deltas[1]
       }
     }
   }
 
-  howFar() {
-    let moves = LocalDateTime.now().until(this.nextStation.departAt.minusSeconds(5), ChronoUnit.MILLIS) / TrainSpeed;
+  howFar(now, when) {
+    // times are in seconds
+    let moves = (when - now) / (TrainSpeed / 1000);
     if (moves < 1) {
       moves = 1;
     }
 
-    let deltaLat = (this.nextStation.lat - this.position.lat) / moves;
-    let deltaLong = (this.nextStation.lng - this.position.lng) / moves;
-    return [deltaLat, deltaLong];
+    let deltaLat = (this.stop.lat - this.position.lat) / moves;
+    let deltaLng = (this.stop.lng - this.position.lng) / moves;
+    return [deltaLat, deltaLng];
   }
 }
 
-let SixTrainNorth = [
-  {lat: 40.746664, lng: -73.981891},
-  {lat: 40.752402, lng: -73.977470},
-  {lat: 40.757156, lng: -73.972160},
-  {lat: 40.762845, lng: -73.967535},
-  {lat: 40.762996, lng: -73.967868},
-  {lat: 40.768144, lng: -73.963872},
-  {lat: 40.773522, lng: -73.959746},
-  {lat: 40.779462, lng: -73.955830},
-  {lat: 40.785683, lng: -73.950927},
-  {lat: 40.790192, lng: -73.947682}
-]
+let trains = {}
 
-let SixTrainSouth = [
-  {lat: 40.790192, lng: -73.947682},
-  {lat: 40.785683, lng: -73.950927},
-  {lat: 40.779462, lng: -73.955830},
-  {lat: 40.773522, lng: -73.959746},
-  {lat: 40.768144, lng: -73.963872},
-  {lat: 40.762996, lng: -73.967868},
-  {lat: 40.762845, lng: -73.967535},
-  {lat: 40.757156, lng: -73.972160},
-  {lat: 40.752402, lng: -73.977470},
-  {lat: 40.746664, lng: -73.981891}
-]
+let getTrains = (map) => {
+  fetch("https://s3.amazonaws.com/wibitty.com/js/gtfs.json")
+    .then( resp => resp.json() )
+    .then( update => {
+      Object.keys(update).forEach( key => {
+        let train = update[key];
+        if (trains[train.id]) {
+          trains[train.id].updateData(train);
+        } else {
+          trains[train.id] = new Train(train, map);
+        }
+      });
 
-let FFTrainSouth = [
-  {lat: 40.804406, lng: -73.937221},
-  {lat: 40.779469, lng: -73.955841},
-  {lat: 40.762996, lng: -73.967868},
-  {lat: 40.752402, lng: -73.977470},
-  {lat: 40.735291, lng: -73.991064}
-]
-
-let FFTrainNorth = [
-  {lat: 40.735291, lng: -73.991064},
-  {lat: 40.752402, lng: -73.977470},
-  {lat: 40.762996, lng: -73.967868},
-  {lat: 40.779469, lng: -73.955841},
-  {lat: 40.804406, lng: -73.937221}
-]
-
-let LocalDateTime = JSJoda.LocalDateTime;
-let ChronoUnit = JSJoda.ChronoUnit;
-
-let sixtrain = (map) => {
-  let icon = L.icon({
-    iconUrl: 'img/6.png',
-    iconSize: [35, 35],
-  });
-  let route = SixTrainNorth;
-  if (Math.random() > 0.5) {
-    route = SixTrainSouth;
-  }
-  let stops = [];
-  for(let i=0; i<route.length; i++) {
-    stops.push({
-      lat: route[i].lat,
-      lng: route[i].lng,
-      departAt: LocalDateTime.now().plusSeconds(i*35)
+      // delete train if no longer in update
+      Object.keys(trains).forEach( key => {
+        if (!update[key]) {
+          trains[key].destroy();
+          delete(trains[key]);
+        }
+      });
     })
-  }
-  new Train("6S", stops, map, icon);
-  setTimeout(() => fftrain(map), 120000);
-}
-
-let fftrain = (map) => {
-  let icon = L.icon({
-    iconUrl: 'img/4.png',
-    iconSize: [35, 35],
-  });
-  if (Math.random() > 0.5) {
-    icon = L.icon({
-      iconUrl: 'img/5.png',
-      iconSize: [35, 35],
-    });
-  }
-  let route = FFTrainSouth;
-  if (Math.random() > 0.5) {
-    route = FFTrainNorth;
-  }
-  let stops = [];
-  for(let i=0; i<route.length; i++) {
-    stops.push({
-      lat: route[i].lat,
-      lng: route[i].lng,
-      departAt: LocalDateTime.now().plusSeconds(i*35)
-    })
-  }
-  new Train("5S", stops, map, icon);
-  setTimeout(() => fftrain(map), 60000);
 }
 
 document.addEventListener('DOMContentLoaded', () => { 
-    let mymap = L.map('mapid', {
-      zoomControl: false,
-      dragging: false,
-      boxZoom: false,
-      doubleClickZoom: false,
-      scrollWheelZoom: false
-    }).setView([40.768, -73.985], 14);
+  let mymap = L.map('mapid', {
+    zoomControl: false,
+    dragging: false,
+    boxZoom: false,
+    doubleClickZoom: false,
+    scrollWheelZoom: false
+  }).setView([40.768, -73.985], 14);
 
-    L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/{y}.png?apikey={apikey}', {
-        attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-        apikey: 'da8d4e6212904e8fbf27c73c7b2a237e',
-        maxZoom: 22
-    }).addTo(mymap);
+  L.tileLayer('https://{s}.tile.thunderforest.com/pioneer/{z}/{x}/{y}.png?apikey={apikey}', {
+    attribution: '&copy; <a href="http://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+    apikey: 'da8d4e6212904e8fbf27c73c7b2a237e',
+    maxZoom: 22
+  }).addTo(mymap);
 
-    sixtrain(mymap);
-    fftrain(mymap);
+  setInterval(() => getTrains(mymap), 30000);
 }, false);
