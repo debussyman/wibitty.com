@@ -5,11 +5,18 @@ class Train {
     this.updateData(data);
 
     // initially put the train at the known coords of stop
-    this.status = "STOPPED_AT";
-    this.position = {
-      lat: this.stop.lat,
-      lng: this.stop.lng
-    };
+    if(this.lastStop) {
+      this.position = {
+        lat: this.lastStop.lat,
+        lng: this.lastStop.lng
+      };
+    } else {
+      this.status = "STOPPED_AT";
+      this.position = {
+        lat: this.stop.lat,
+        lng: this.stop.lng
+      };
+    }
 
     console.log("Creating new train", this);
     let icon = L.icon({
@@ -24,6 +31,7 @@ class Train {
   updateData(update) {
     this.stop = update.stop;
     this.nextStop = update.next_stop;
+    this.lastStop = update.last_stop;
     this.status = update.status;
     this.id = update.id;
   }

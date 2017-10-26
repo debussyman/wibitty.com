@@ -20,6 +20,11 @@ def load_stops():
                 stops[stop_id] = {"lat": float(stop_lat), "lng": float(stop_lon), "name": stop_name}
     return stops
 
+def load_sequence():
+    with open('static/sequence.json', 'r') as stfile:
+        return json.load(stfile)
+
+
 def stop_time_north(stop_time):
     if(stop_time.Extensions[nyct_subway_pb2.nyct_stop_time_update].HasField('actual_track')):
         track = stop_time.Extensions[nyct_subway_pb2.nyct_stop_time_update].actual_track
@@ -63,16 +68,22 @@ def url():
     key = os.environ['MTAKEY']
     return 'http://datamine.mta.info/mta_esi.php?key={}&feed_id=1'.format(key)
 
-def lambda_handler(event, context):
-    print('Querying mta data at {}...'.format(event['time']))
-    stops = load_stops()
+def load_feed():
     feed = gtfs_realtime_pb2.FeedMessage()
     body = urllib2.urlopen(url()).read()
     feed.ParseFromString(body)
+    return feed
+
+def lambda_handler(event, context):
+    print('Querying mta data at {}...'.format(event['time']))
+    stops = load_stops()
+    sequence = load_sequence()
+    feed = load_feed()
+
     vehicles = [v.vehicle for v in feed.entity if v.vehicle.ByteSize() > 0]
-    alerts = [a for a in feed.entity if a.alert.ByteSize() > 0]
     updates = [u.trip_update for u in feed.entity if u.trip_update.ByteSize() > 0]
     results = {}
+
     for v in vehicles:
         descriptor = v.trip.Extensions[nyct_subway_pb2.nyct_trip_descriptor]
         match = re.match(r'^0([123456])', descriptor.train_id, re.M)
@@ -88,18 +99,22 @@ def lambda_handler(event, context):
             if next_stop_time != None:
                 next_stop = {"arrival": stop_time_arrival(next_stop_time), "departure": stop_time_departure(next_stop_time)}
                 next_stop.update(stops[next_stop_time.stop_id])
-            else:
-                next_stop = None
 
-            r['north'] = stop_time_north(stop_time)
-            r['local'] = stop_time_local(stop_time)
-            r['stop'] = stop
-            r['next_stop'] = next_stop
-            results[r['id']] = r
+                if sequence.has_key(stop_time.stop_id):
+                    last_stop = stops[sequence[stop_time.stop_id]]
+                else:
+                    last_stop = None
+
+                r['north'] = stop_time_north(stop_time)
+                r['local'] = stop_time_local(stop_time)
+                r['stop'] = stop
+                r['next_stop'] = next_stop
+                r['last_stop'] = last_stop
+                results[r['id']] = r
 
     upload_to_s3(results)
     print('Done.')
-    return
+    return True
 
 if __name__ == '__main__':
     lambda_handler({'time': 'Now'}, None)
