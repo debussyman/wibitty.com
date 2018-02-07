@@ -13,6 +13,19 @@
         margin: 0;
         font-family: 'Scope One', serif;
       }
+      body {
+        background:
+          linear-gradient(
+            rgba(255, 255, 255, 1.00), 
+            rgba(255, 255, 255, 0.90),
+            rgba(255, 255, 255, 0.45)
+          ),
+          url(background.jpg) no-repeat center center fixed; 
+        -webkit-background-size: cover;
+        -moz-background-size: cover;
+        -o-background-size: cover;
+        background-size: cover;
+      }
       h2, h3 {
         font-family: 'Merriweather', serif;
       }
@@ -22,7 +35,6 @@
         grid-template-rows: 10% auto;
       }
       .container div {
-        background-color: white;
         margin: 10px 0;
       }
       .header {
@@ -68,6 +80,9 @@
       @media only screen
         and (max-device-width: 600px)
         and (orientation: portrait) {
+        body {
+          background: none;
+        }
         .header {
           display: none;
         }
