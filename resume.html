@@ -18,7 +18,7 @@
           linear-gradient(
             rgba(255, 255, 255, 1.00), 
             rgba(255, 255, 255, 0.90),
-            rgba(255, 255, 255, 0.45)
+            rgba(255, 255, 255, 0.70)
           ),
           url(background.jpg) no-repeat center center fixed; 
         -webkit-background-size: cover;
@@ -57,10 +57,6 @@
         font-size: 3ex;
         padding: 20px 10px;
       }
-      .intro {
-        font-size: 1.5ex;
-        color: #6a6a6a;
-      }
       .company {
         grid-column: side;
         text-align: right;
@@ -75,6 +71,11 @@
         padding: 10px;
         font-size: 2.5ex;
         border-left: 1px solid black;
+      }
+      .intro {
+        font-size: 1.5ex;
+        color: #6a6a6a;
+        border: none;
       }
 
       @media only screen
@@ -143,6 +144,10 @@
         I am an entrepreneur and technologist with experience as a technical leader, code contributor, system architect, security officer, and recruiter. I have been a founding member of technology startups and heavily involved in company direction through inception, growth, fundraising and acquisition.
       </div>
 
+      <div class="description">
+        <div class="intro">Experience</div>
+      </div>
+
       <!-- Docurated -->
       <div class="company">
         <h3>Docurated</h3>
@@ -154,10 +159,10 @@
         In early 2012 I started working on Docurated with a few partners. What began as a night/weekend/hackathon project quickly became a real company in a matter of months. I recruited a couple of friends to help build a prototype with which we raised a seed round. By July we were working full time and on-boarded our first customers in September. Over the next five years, we led the company through Series A and B fundraising rounds, scaled the team to nearly 50 people, and culminated with an acquisition in late 2017.
         <br/>
         <br/>
-        As a member of the executive staff I had influence on the company direction, strategy and operations. As the most senior technical lead I had responsibility over all aspects of systems architecture, security, recruiting and technical sales. I was also a core contributor to much of the software we built. Our SaaS product scaled to hundreds of customers for whom we hosted multi-terabyte distributed search indices, indexing hundreds of millions of Office documents, PDFs and other unstructured-text files. I recruited over a dozen engineers to join our team. I oversaw all security aspects from implementation of best-practices in infrastructure, application and policies including multiple third-party penetration tests, code reviews and audits. Frequently I would participate in sales calls and analyst presentations to represent the technical capabilities of our products.
+        As a member of the executive staff I had influence on the company direction, strategy and operations. As the most senior technical lead I had responsibility over all aspects of systems architecture, security, recruiting and technical sales. I was also a core contributor to much of the software we built. Our SaaS product scaled to hundreds of customers for whom we hosted multi-terabyte distributed search indices, indexing hundreds of millions of Office documents, PDFs and other unstructured-text files. Customers included one of the world’s largest banks, a firm with hundreds of thousands of field reps, and a biotechnology company curing rare diseases. I oversaw all security aspects from implementation of best-practices in infrastructure, application and policies including multiple third-party penetration tests, code reviews and audits. Frequently I would participate in sales calls and analyst presentations to represent the technical capabilities of our products.
         <br/>
         <br/>
-        Our engineering culture was very aligned around autonomy, experimentation and learning - we recruited for individual contributors who were capable of self-direction and high output. The software stack reflected this, and included many databases, programming languages, open-source frameworks, distributed systems and AWS services. The majority of our code was java/scala, ruby and python and our web application was Rails. Our index production pipelines utilized Akka and we open-sourced our work distribution framework called Cluster Emcee. In early 2017 we migrated the majority of our applications into containers orchestrated by Kubernetes.
+        Our engineering culture was very aligned around autonomy, experimentation and learning &ndash; we recruited for individual contributors who were capable of self-direction and high output. The software stack reflected this, and included many databases, programming languages, open-source frameworks, distributed systems and AWS services. The majority of our code was java/scala, ruby and python and our web application was Rails. Our index production pipelines utilized Akka and we open-sourced our work distribution framework called Cluster Emcee. In early 2017 we migrated the majority of our applications into containers orchestrated by Kubernetes.
       </div>
 
       <!-- Alta -->
@@ -168,10 +173,10 @@
         2010 &ndash; 2012
       </div>
       <div class="company-experience">
-        After the acquisition of Boliven, I was given an opportunity to continue working with the founder on a new venture. This became Alta Investors, and we tried to get a few different business ideas running profitably. In addition to developing these ideas, I was the only engineer on the team and responsible for all technology from architecture design to implementation. The businesses ranged from a hedged equity fund-of-funds, 401k administration, and portfolio analysis software for midsized investors like family offices and endowments. The technology underpinning these was homogeneous, tools for portfolio analysis and optimization based on returns and fees, compared to a benchmark index.
+        After the acquisition of Boliven, I was given an opportunity to continue working with the founder on a new venture. This became Alta Investors, and we tried to get a few different business ideas running profitably. In addition to developing these ideas, I was the only engineer on the team and responsible for all technology from architecture design to implementation. The businesses ranged from a hedged equity fund-of-funds, 401k administration, and software for midsized institutional investors like family offices and endowments. Underpinning these was a homogeneous technology &ndash; tools for portfolio analysis and optimization based on returns and fees, compared to a benchmark index.
         <br/>
         <br/>
-        I built software to ingest public data sets such as SEC filings, index performance and asset prices. We would use these to benchmark manager performance, analyze risk-based allocations against industry or geography, and build ideal risk-adjusted portfolios for different investment horizons. For many of the tools we built, we licensed them in a SaaS product for third-party professional investors. The technology platform was built on AWS and heavily utilized a custom work distribution system that incorporated services like EC2 and SQS. Most code was written in Ruby and data was stored in S3 and MongoDB.
+        I built software to ingest public data sets such as SEC filings, index performance and asset prices. We would use these to benchmark manager performance, analyze risk-based allocations against industry or geography, and build ideal risk-adjusted portfolios for different investment horizons. For many of the tools built, we licensed them in a SaaS product for third-party professional investors. The technology platform was built on AWS and heavily utilized a custom work distribution system that incorporated services like EC2 and SQS. Most code was written in Ruby and data was stored in S3 and MongoDB.
       </div>
 
       <!-- Boliven -->
@@ -182,7 +187,10 @@
         2009 &ndash; 2010
       </div>
       <div class="company-experience">
-        Boliven was focused on building research and networking tools for IP professionals. We collected public filings from the U.S. and international organizations including patents, trademarks, clinical trials, medical publications and others. Documents were indexed using SOLR and analyzed for named entity extraction. The SaaS web application featured tools for searching the full library of content and navigate the social graph of people, products and companies named in the documents. This presented challenges of speed and scale for the distributed indices, efficient content analysis and extraction, disambiguation of entities, and manual labor - some agencies only delivered documents on tape. The website used Ruby on Rails, and backend services written in Java. As a small engineering team of five people, I had an opportunity to contribute across the entire stack. These ranged from improving the index production, R&amp;D projects and new customer-facing website features. We used open-source software like Hadoop Cascading (map reduce), Tokyo Cabinet (no-sql) and UIMA (content analytics) as part of a modern SaaS application architecture. Boliven was an early adopter of AWS and ultimately hosted all of their infrastructure on the platform. In March 2010, Boliven was acquired by Cambridge IP.
+        Boliven was focused on building research and networking tools for IP professionals. We collected public filings from the U.S. and international organizations including patents, trademarks, clinical trials, medical publications and others. Documents were indexed using SOLR and analyzed for named entity extraction. The SaaS web application featured tools for searching the full library of content and navigating the social graph of people, products and companies named in the documents. This presented challenges of speed and scale for the distributed indices, efficient content analysis and extraction, disambiguation of entities, and manual labor &ndash; some agencies only delivered documents on tape. The website used Ruby on Rails, and backend services written in Java.
+        <br/>
+        <br/>
+        As a small engineering team of five people, I had an opportunity to contribute across the entire stack. These ranged from improving the index production, R&amp;D projects and new customer-facing website features. We used open-source software like Hadoop Cascading (map reduce), Tokyo Cabinet (no-sql) and UIMA (content analytics) as part of a modern SaaS application architecture. Boliven was an early adopter of AWS and ultimately hosted all of their infrastructure on the platform. In March 2010, Boliven was acquired by Cambridge IP.
       </div>
 
       <!-- Shmoop -->
@@ -210,10 +218,10 @@
         2005 &ndash; 2007
       </div>
       <div class="company-experience">
-          I joined a mobile application startup after college and contributed to a small team of less than a ten developers building 
-          enterprise client-server products. The entire company was 15 people. I was responsible for a variety of project from database schema design 
-          and management; administration, test and deployment tools; MVC and servlet-container application design; J2ME 
-          rich client development; and web page design. Java was the primary language with a server-side stack of
+          I joined a mobile application startup after college and contributed to a small team of less than ten developers building 
+          enterprise client-server products. The entire company was 15 people. I was responsible for a variety of projects from database schema design 
+          and management, administration and deployment tools, MVC and servlet-container application design, J2ME 
+          rich client development, and web page design. Java was the primary language with a server-side stack of
 	        Tomcat/Struts/Spring/Hibernate servers, JDBC database CRUD layers, PL/SQL constraints, and Hibernate annotations. 
 	        I initiated and developed next-generation projects around Lumitrend's proprietary synchronization technology, 
 	        social network graph integration, and an AJAX-assisted inline content management portal. Our development 
