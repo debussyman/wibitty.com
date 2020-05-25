@@ -3,6 +3,7 @@ from __future__ import print_function
 
 import os
 import gtfs_realtime_pb2, nyct_subway_pb2
+import urllib
 import urllib2
 import csv
 import re
@@ -65,12 +66,14 @@ def upload_to_s3(results):
     return
 
 def url():
-    key = os.environ['MTAKEY']
-    return 'http://datamine.mta.info/mta_esi.php?key={}&feed_id=1'.format(key)
+    return 'https://api-endpoint.mta.info/Dataservice/mtagtfsfeeds/nyct%2Fgtfs'
 
 def load_feed():
+    key = os.environ['MTAKEY']
+    req = urllib2.Request(url(), None, {'x-api-key': key})
     feed = gtfs_realtime_pb2.FeedMessage()
-    body = urllib2.urlopen(url()).read()
+
+    body = urllib2.urlopen(req).read()
     feed.ParseFromString(body)
     return feed
 
