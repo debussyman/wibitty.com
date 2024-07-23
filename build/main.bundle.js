@@ -99,10 +99,7 @@ var Train = function () {
     }
 
     console.log("Creating new train", this);
-    var icon = L.icon({
-      iconUrl: "http://www.mta.info/sites/all/themes/mta/images/subway_bullets/" + data.track + ".png",
-      iconSize: [16, 16]
-    });
+    var icon = L.divIcon({ className: "train-marker train-marker-" + data.track });
     this.marker = L.marker([this.position.lat, this.position.lng], { icon: icon }).addTo(map);
     this.intervalId = setInterval(function () {
       return _this.updateMarker();
